@@ -40,14 +40,14 @@ constructor(
         prayerTimes.forEach { prayer ->
             try {
                 val prayerTime = LocalTime.parse(prayer.time, formatter)
-                
+
                 // Only schedule if the prayer time hasn't passed yet today
                 if (prayerTime.isAfter(now)) {
                     val zonedDateTime = prayerTime.atDate(today)
                         .atZone(ZoneId.systemDefault())
-                    
+
                     reminderRepository.schedulePrayerAlarm(
-                        prayer.name, 
+                        prayer.name,
                         zonedDateTime.toInstant().toEpochMilli()
                     )
                 }

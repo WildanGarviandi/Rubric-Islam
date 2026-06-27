@@ -4,33 +4,46 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.cos
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QiblatScreen(viewModel: QiblatViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     // Smoothly animate the direction changes
     val animatedDirection by animateFloatAsState(
         targetValue = uiState.direction,
@@ -41,16 +54,16 @@ fun QiblatScreen(viewModel: QiblatViewModel) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "QIBLAT", 
+                        "QIBLAT",
                         style = MaterialTheme.typography.titleLarge.copy(
                             letterSpacing = 4.sp,
                             fontWeight = FontWeight.Light
                         )
-                    ) 
+                    )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.secondary
                 )
@@ -69,9 +82,9 @@ fun QiblatScreen(viewModel: QiblatViewModel) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else {
                 ModernCompassView(direction = animatedDirection)
-                
+
                 Spacer(modifier = Modifier.height(48.dp))
-                
+
                 Text(
                     text = "${uiState.direction.toInt()}°",
                     style = MaterialTheme.typography.displayLarge.copy(
@@ -79,7 +92,7 @@ fun QiblatScreen(viewModel: QiblatViewModel) {
                         fontWeight = FontWeight.ExtraLight
                     )
                 )
-                
+
                 Text(
                     text = "ALIGN THE ARROW TO THE KAABA",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -95,9 +108,7 @@ fun QiblatScreen(viewModel: QiblatViewModel) {
 @Composable
 fun ModernCompassView(direction: Float) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = MaterialTheme.colorScheme.secondary
     val outlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-    val onSurface = MaterialTheme.colorScheme.onSurface
 
     Box(
         modifier = Modifier
@@ -123,16 +134,16 @@ fun ModernCompassView(direction: Float) {
                 val angleRad = Math.toRadians(angle.toDouble())
                 val isMajor = i % 18 == 0
                 val length = if (isMajor) 15.dp.toPx() else 8.dp.toPx()
-                
+
                 val start = Offset(
-                    (center.x + (radius - 5.dp.toPx()) * Math.cos(angleRad)).toFloat(),
-                    (center.y + (radius - 5.dp.toPx()) * Math.sin(angleRad)).toFloat()
+                    (center.x + (radius - 5.dp.toPx()) * cos(angleRad)).toFloat(),
+                    (center.y + (radius - 5.dp.toPx()) * sin(angleRad)).toFloat()
                 )
                 val end = Offset(
-                    (center.x + (radius - 5.dp.toPx() - length) * Math.cos(angleRad)).toFloat(),
-                    (center.y + (radius - 5.dp.toPx() - length) * Math.sin(angleRad)).toFloat()
+                    (center.x + (radius - 5.dp.toPx() - length) * cos(angleRad)).toFloat(),
+                    (center.y + (radius - 5.dp.toPx() - length) * sin(angleRad)).toFloat()
                 )
-                
+
                 drawLine(
                     color = if (isMajor) primaryColor else outlineColor,
                     start = start,
@@ -151,7 +162,7 @@ fun ModernCompassView(direction: Float) {
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val center = Offset(size.width / 2, size.height / 2)
-                
+
                 // Draw Qiblat Arrow
                 val arrowPath = Path().apply {
                     moveTo(center.x, center.y - 120.dp.toPx()) // Tip
@@ -159,12 +170,12 @@ fun ModernCompassView(direction: Float) {
                     lineTo(center.x + 12.dp.toPx(), center.y - 80.dp.toPx())
                     close()
                 }
-                
+
                 drawPath(
                     path = arrowPath,
                     color = primaryColor
                 )
-                
+
                 // Draw line to arrow
                 drawLine(
                     color = primaryColor.copy(alpha = 0.3f),
@@ -173,7 +184,7 @@ fun ModernCompassView(direction: Float) {
                     strokeWidth = 2.dp.toPx()
                 )
             }
-            
+
             // Modern Kaaba Illustration at the top of the rotating part
             Box(
                 modifier = Modifier
@@ -184,7 +195,7 @@ fun ModernCompassView(direction: Float) {
                 KaabaIllustration()
             }
         }
-        
+
         // Center Point
         Box(
             modifier = Modifier
@@ -198,7 +209,7 @@ fun ModernCompassView(direction: Float) {
 fun KaabaIllustration() {
     val gold = Color(0xFFD4AF37)
     val black = Color(0xFF1A1A1A)
-    
+
     Canvas(modifier = Modifier.size(40.dp)) {
         // Main Body
         drawRoundRect(
@@ -206,21 +217,21 @@ fun KaabaIllustration() {
             size = Size(size.width, size.height),
             cornerRadius = CornerRadius(4.dp.toPx())
         )
-        
+
         // Kiswah (Gold Belt)
         drawRect(
             color = gold,
             topLeft = Offset(0f, size.height * 0.25f),
             size = Size(size.width, size.height * 0.08f)
         )
-        
+
         // Door (Gold)
         drawRect(
             color = gold,
             topLeft = Offset(size.width * 0.65f, size.height * 0.45f),
             size = Size(size.width * 0.2f, size.height * 0.35f)
         )
-        
+
         // Top shadow/perspective line
         drawLine(
             color = Color.White.copy(alpha = 0.1f),

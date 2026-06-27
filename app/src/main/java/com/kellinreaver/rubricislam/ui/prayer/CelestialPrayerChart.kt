@@ -19,10 +19,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun CelestialPrayerChart(
-    prayerTimes: List<PrayerTime>,
-    modifier: Modifier = Modifier
-) {
+fun CelestialPrayerChart(prayerTimes: List<PrayerTime>, modifier: Modifier = Modifier) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary
 

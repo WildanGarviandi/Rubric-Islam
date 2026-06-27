@@ -64,7 +64,7 @@ constructor(
             try {
                 val prayerTime = LocalTime.parse(it.time, timeFormatter)
                 prayerTime.isAfter(currentTime)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
         }
