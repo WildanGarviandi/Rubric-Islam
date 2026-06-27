@@ -1,24 +1,35 @@
 package com.kellinreaver.rubricislam.ui.prayer
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kellinreaver.rubricislam.domain.model.PrayerTime
-import com.kellinreaver.rubricislam.ui.theme.RubricIslamTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,16 +39,16 @@ fun PrayerTimesScreen(viewModel: PrayerTimeViewModel) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "RUBRIC ISLAM", 
+                        "RUBRIC ISLAM",
                         style = MaterialTheme.typography.titleLarge.copy(
                             letterSpacing = 4.sp,
                             fontWeight = FontWeight.Light
                         )
-                    ) 
+                    )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.secondary
                 )
@@ -45,54 +56,50 @@ fun PrayerTimesScreen(viewModel: PrayerTimeViewModel) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.secondary
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } else if (uiState.error != null) {
+                Text(
+                    text = uiState.error!!,
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    CelestialPrayerChart(
+                        prayerTimes = uiState.prayerTimes,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                } else if (uiState.error != null) {
+
                     Text(
-                        text = uiState.error!!,
-                        modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
+                        text = "Daily Prayer",
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-                } else {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        CelestialPrayerChart(
-                            prayerTimes = uiState.prayerTimes,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        
-                        Text(
-                            text = "Daily Prayer",
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
 
-                        Text(
-                            text = ""
-                        )
-
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(uiState.prayerTimes) { prayer ->
-                                ElegantPrayerCard(prayer)
-                            }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.prayerTimes) { prayer ->
+                            ElegantPrayerCard(prayer)
                         }
                     }
                 }
             }
         }
+    }
 }
 
 @Composable
@@ -103,7 +110,7 @@ fun ElegantPrayerCard(prayer: PrayerTime) {
     } else {
         MaterialTheme.colorScheme.surface
     }
-    
+
     val borderColor = if (isNext) {
         MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
     } else {
@@ -129,7 +136,11 @@ fun ElegantPrayerCard(prayer: PrayerTime) {
                     text = prayer.name.uppercase(),
                     style = MaterialTheme.typography.labelLarge.copy(
                         letterSpacing = 2.sp,
-                        color = if (isNext) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isNext) {
+                            MaterialTheme.colorScheme.secondary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 )
                 if (isNext) {
@@ -140,7 +151,7 @@ fun ElegantPrayerCard(prayer: PrayerTime) {
                     )
                 }
             }
-            
+
             Text(
                 text = prayer.time,
                 style = MaterialTheme.typography.headlineMedium.copy(

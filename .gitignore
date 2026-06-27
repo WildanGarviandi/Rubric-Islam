@@ -17,3 +17,8 @@ local.properties
 # AI related
 .opencode/
 graphify-out/
+
+# release-config
+keystore.properties
+*.jks
+*.keystore
