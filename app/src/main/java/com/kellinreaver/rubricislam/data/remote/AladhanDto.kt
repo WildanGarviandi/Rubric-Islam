@@ -2,15 +2,9 @@ package com.kellinreaver.rubricislam.data.remote
 
 import com.google.gson.annotations.SerializedName
 
-data class AladhanResponse(
-    val code: Int,
-    val status: String,
-    val data: AladhanData
-)
+data class AladhanResponse(val code: Int, val status: String, val data: AladhanData)
 
-data class AladhanData(
-    val timings: PrayerTimings
-)
+data class AladhanData(val timings: PrayerTimings)
 
 data class PrayerTimings(
     @SerializedName("Fajr") val fajr: String,

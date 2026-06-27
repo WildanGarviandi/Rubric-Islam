@@ -6,5 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface PrayerTimeRepository {
     fun getCurrentLocation(): Flow<LocationModel>
+
     fun getPrayerTimes(lat: Double, lon: Double): Flow<List<PrayerTime>>
 }

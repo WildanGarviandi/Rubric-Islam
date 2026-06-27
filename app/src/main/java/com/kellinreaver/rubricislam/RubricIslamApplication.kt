@@ -10,19 +10,22 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.kellinreaver.rubricislam.worker.PrayerTimeWorker
 import dagger.hilt.android.HiltAndroidApp
-import javax.inject.Inject
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 @HiltAndroidApp
-class RubricIslamApplication : Application(), Configuration.Provider {
-
+class RubricIslamApplication :
+    Application(),
+    Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
     override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+        get() =
+            Configuration
+                .Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
 
     override fun onCreate() {
         super.onCreate()
@@ -30,13 +33,16 @@ class RubricIslamApplication : Application(), Configuration.Provider {
     }
 
     private fun schedulePrayerWorker() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+        val constraints =
+            Constraints
+                .Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
-        val prayerWorkRequest = PeriodicWorkRequestBuilder<PrayerTimeWorker>(12, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
+        val prayerWorkRequest =
+            PeriodicWorkRequestBuilder<PrayerTimeWorker>(12, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "PrayerTimeWorker",

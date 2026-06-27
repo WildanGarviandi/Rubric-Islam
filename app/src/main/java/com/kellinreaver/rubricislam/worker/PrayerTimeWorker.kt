@@ -1,6 +1,7 @@
 package com.kellinreaver.rubricislam.worker
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -9,43 +10,58 @@ import com.kellinreaver.rubricislam.domain.usecase.GetLocationUseCase
 import com.kellinreaver.rubricislam.domain.usecase.GetPrayerTimesUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.first
-import java.util.*
-import java.text.SimpleDateFormat
 
 @HiltWorker
-class PrayerTimeWorker @AssistedInject constructor(
+class PrayerTimeWorker
+@AssistedInject
+constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
     private val getLocationUseCase: GetLocationUseCase,
     private val reminderRepository: ReminderRepositoryImpl
 ) : CoroutineWorker(context, workerParams) {
+    override suspend fun doWork(): Result = try {
+        val location = getLocationUseCase().first()
+        val prayerTimes = getPrayerTimesUseCase(
+            location.latitude,
+            location.longitude
+        ).first()
 
-    override suspend fun doWork(): Result {
-        return try {
-            val location = getLocationUseCase().first()
-            val prayerTimes = getPrayerTimesUseCase(location.latitude, location.longitude).first()
+        val now = LocalTime.now()
+        val today = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
 
-            prayerTimes.forEach { prayer ->
-                val timeInMillis = parseTimeToMillis(prayer.time)
-                if (timeInMillis != null) {
-                    reminderRepository.schedulePrayerAlarm(prayer.name, timeInMillis)
+        prayerTimes.forEach { prayer ->
+            try {
+                val prayerTime = LocalTime.parse(prayer.time, formatter)
+                
+                // Only schedule if the prayer time hasn't passed yet today
+                if (prayerTime.isAfter(now)) {
+                    val zonedDateTime = prayerTime.atDate(today)
+                        .atZone(ZoneId.systemDefault())
+                    
+                    reminderRepository.schedulePrayerAlarm(
+                        prayer.name, 
+                        zonedDateTime.toInstant().toEpochMilli()
+                    )
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to parse/schedule time ${prayer.time}: ${e.message}")
             }
-            Result.success()
-        } catch (e: Exception) {
-            Result.retry()
         }
+        Result.success()
+    } catch (e: Exception) {
+        Log.e(TAG, "Error in PrayerTimeWorker: ${e.message}", e)
+        Result.retry()
     }
 
-    private fun parseTimeToMillis(time: String): Long? {
-        return try {
-            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val date = sdf.parse(time) ?: return null
-            date.time
-        } catch (e: Exception) {
-            null
-        }
+    companion object {
+        private const val TAG = "PrayerTimeWorker"
     }
 }

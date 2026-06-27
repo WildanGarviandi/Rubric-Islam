@@ -1,18 +1,15 @@
 package com.kellinreaver.rubricislam.domain.usecase
 
 import com.kellinreaver.rubricislam.domain.repository.PrayerTimeRepository
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
-data class LocationModel(
-    val latitude: Double,
-    val longitude: Double
-)
+data class LocationModel(val latitude: Double, val longitude: Double)
 
-class GetLocationUseCase @Inject constructor(
+class GetLocationUseCase
+@Inject
+constructor(
     private val prayerTimeRepository: PrayerTimeRepository
 ) {
-    operator fun invoke(): Flow<LocationModel> {
-        return prayerTimeRepository.getCurrentLocation()
-    }
+    operator fun invoke(): Flow<LocationModel> = prayerTimeRepository.getCurrentLocation()
 }

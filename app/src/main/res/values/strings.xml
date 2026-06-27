@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Rubric Islam</string>
+    <string name="header_guided_your_location_label">Guided by your location</string>
+    <string name="header_set_your_location_label">Set your orientation</string>
+    <string name="permission_title_label">To provide accurate prayer times and point you toward the Qiblat, we need to know your general location.</string>
+    <string name="permission_description_label">Connect with your location to find the Qiblat and precise prayer times for your current journey.</string>
+    <string name="grant_access_label">Grant Access</string>
+    <string name="allow_location_label">Allow Location</string>
+    <string name="tab_prayer_name">Prayer</string>
+    <string name="tab_qiblat_name">Qiblat</string>
+    <string name="tab_alerts_name">Alerts</string>
+
+
 </resources>

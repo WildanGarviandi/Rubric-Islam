@@ -5,18 +5,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.kellinreaver.rubricislam.ui.prayer.PrayerTimesScreen
 import com.kellinreaver.rubricislam.ui.prayer.PrayerTimeViewModel
+import com.kellinreaver.rubricislam.ui.prayer.PrayerTimesScreen
 import com.kellinreaver.rubricislam.ui.qiblat.QiblatScreen
 import com.kellinreaver.rubricislam.ui.qiblat.QiblatViewModel
 import com.kellinreaver.rubricislam.ui.reminder.ReminderScreen
 import com.kellinreaver.rubricislam.ui.reminder.ReminderViewModel
 
 @Composable
-fun NavGraph(
-    navController: NavHostController,
-    startDestination: String
-) {
+fun NavGraph(navController: NavHostController, startDestination: String) {
     NavHost(
         navController = navController,
         startDestination = startDestination

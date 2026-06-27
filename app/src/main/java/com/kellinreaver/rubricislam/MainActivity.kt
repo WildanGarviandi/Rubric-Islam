@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -61,23 +63,25 @@ class RubElHizbShape : Shape {
         layoutDirection: LayoutDirection,
         density: Density
     ): androidx.compose.ui.graphics.Outline {
-        val path = Path().apply {
-            val radius = size.minDimension / 2
-            val centerX = size.width / 2
-            val centerY = size.height / 2
-            val sides = 8
-            val innerRadius = radius * 0.7f
+        val path =
+            Path().apply {
+                val radius = size.minDimension / 2
+                val centerX = size.width / 2
+                val centerY = size.height / 2
+                val sides = 8
+                val innerRadius = radius * 0.7f
 
-            for (i in 0 until sides * 2) {
-                val r = if (i % 2 == 0) radius else innerRadius
-                val angle = Math.toRadians((i * 360.0 / (sides * 2)) - 22.5)
-                val x = centerX + r * cos(angle).toFloat()
-                val y = centerY + r * sin(angle).toFloat()
-                if (i == 0) moveTo(x, y) else lineTo(x, y)
+                for (i in 0 until sides * 2) {
+                    val r = if (i % 2 == 0) radius else innerRadius
+                    val angle = Math.toRadians((i * 360.0 / (sides * 2)) - 22.5)
+                    val x = centerX + r * cos(angle).toFloat()
+                    val y = centerY + r * sin(angle).toFloat()
+                    if (i == 0) moveTo(x, y) else lineTo(x, y)
+                }
+                close()
             }
-            close()
-        }
-        return androidx.compose.ui.graphics.Outline.Generic(path)
+        return androidx.compose.ui.graphics.Outline
+            .Generic(path)
     }
 }
 
@@ -99,12 +103,13 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionWrapper(content: @Composable () -> Unit) {
-    val locationPermissionsState = rememberMultiplePermissionsState(
-        listOf(
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION
+    val locationPermissionsState =
+        rememberMultiplePermissionsState(
+            listOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
         )
-    )
 
     if (locationPermissionsState.allPermissionsGranted) {
         content()
@@ -117,23 +122,22 @@ fun PermissionWrapper(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun PermissionRequestScreen(
-    shouldShowRationale: Boolean,
-    onRequestPermission: () -> Unit
-) {
+fun PermissionRequestScreen(shouldShowRationale: Boolean, onRequestPermission: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .fillMaxSize()
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Box(
-                modifier = Modifier
+                modifier =
+                Modifier
                     .size(160.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
@@ -152,7 +156,11 @@ fun PermissionRequestScreen(
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = if (shouldShowRationale) "Guided by your location" else "Set your orientation",
+                text = if (shouldShowRationale) {
+                    stringResource(R.string.header_guided_your_location_label)
+                } else {
+                    stringResource(R.string.header_set_your_location_label)
+                },
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
@@ -162,10 +170,11 @@ fun PermissionRequestScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = if (shouldShowRationale) {
-                    "To provide accurate prayer times and point you toward the Qiblat, we need to know your general location."
+                text =
+                if (shouldShowRationale) {
+                    stringResource(R.string.permission_title_label)
                 } else {
-                    "Connect with your location to find the Qiblat and precise prayer times for your current journey."
+                    stringResource(R.string.permission_description_label)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -177,7 +186,8 @@ fun PermissionRequestScreen(
 
             Button(
                 onClick = onRequestPermission,
-                colors = ButtonDefaults.buttonColors(
+                colors =
+                ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
@@ -186,7 +196,11 @@ fun PermissionRequestScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text = if (shouldShowRationale) "Grant Access" else "Allow Location",
+                    text = if (shouldShowRationale) {
+                        stringResource(R.string.grant_access_label)
+                    } else {
+                        stringResource(R.string.allow_location_label)
+                    },
                     modifier = Modifier.padding(vertical = 8.dp),
                     style = MaterialTheme.typography.titleMedium
                 )
@@ -199,40 +213,48 @@ fun PermissionRequestScreen(
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    val navItems = listOf(
-        Screen.PrayerTimes,
-        Screen.Qiblat,
-        Screen.Reminders
-    )
+    val navItems =
+        listOf(
+            Screen.PrayerTimes,
+            Screen.Qiblat,
+            Screen.Reminders
+        )
     val startDestination = Screen.PrayerTimes.route
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp
             ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
 
                 navItems.forEach { screen ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                    
+                    val selected =
+                        currentDestination?.hierarchy?.any { it.route == screen.route } == true
+
                     NavigationBarItem(
-                        icon = { 
+                        icon = {
                             Box(contentAlignment = Alignment.Center) {
                                 if (selected) {
                                     Box(
-                                        modifier = Modifier
+                                        modifier =
+                                        Modifier
                                             .size(48.dp)
                                             .background(
-                                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                                                color = MaterialTheme.colorScheme.secondary.copy(
+                                                    alpha = 0.2f
+                                                ),
                                                 shape = RubElHizbShape()
                                             )
                                     )
                                 }
                                 Icon(
-                                    imageVector = if (selected) {
+                                    imageVector =
+                                    if (selected) {
                                         when (screen) {
                                             Screen.PrayerTimes -> Icons.Filled.AccessTimeFilled
                                             Screen.Qiblat -> Icons.Filled.Explore
@@ -246,32 +268,41 @@ fun MainScreen() {
                                         }
                                     },
                                     contentDescription = null,
-                                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (selected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
                                 )
                             }
                         },
-                        label = { 
+                        label = {
                             Text(
-                                text = when(screen) {
-                                    Screen.PrayerTimes -> "Prayer"
-                                    Screen.Qiblat -> "Qiblat"
-                                    Screen.Reminders -> "Alerts"
+                                text =
+                                when (screen) {
+                                    Screen.PrayerTimes -> stringResource(R.string.tab_prayer_name)
+                                    Screen.Qiblat -> stringResource(R.string.tab_qiblat_name)
+                                    Screen.Reminders -> stringResource(R.string.tab_alerts_name)
                                 },
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal
-                            ) 
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
                         },
                         selected = selected,
                         onClick = {
                             if (!selected) {
-                                navController.navigate(screen.route) { 
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState =
+                                            true
+                                    }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
                             }
                         },
-                        colors = NavigationBarItemDefaults.colors(
+                        colors =
+                        NavigationBarItemDefaults.colors(
                             indicatorColor = Color.Transparent
                         )
                     )
