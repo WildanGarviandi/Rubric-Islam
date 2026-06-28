@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,8 +21,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,12 +32,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.kellinreaver.rubricislam.domain.model.PrayerTime
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrayerTimesScreen(viewModel: PrayerTimeViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    val scrollToUpcoming = {
+        val index = uiState.prayerTimes.indexOfFirst { it.isNext }
+        if (index != -1) {
+            scope.launch {
+                listState.animateScrollToItem(index)
+            }
+        }
+    }
+
+    // Auto-scroll when data is loaded
+    LaunchedEffect(uiState.prayerTimes) {
+        if (uiState.prayerTimes.isNotEmpty()) {
+            scrollToUpcoming()
+        }
+    }
+
+    // Auto-scroll when app is resumed
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (uiState.prayerTimes.isNotEmpty()) {
+            scrollToUpcoming()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -88,6 +119,7 @@ fun PrayerTimesScreen(viewModel: PrayerTimeViewModel) {
                     )
 
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)

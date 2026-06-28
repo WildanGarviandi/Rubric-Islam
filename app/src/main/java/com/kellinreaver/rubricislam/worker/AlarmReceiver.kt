@@ -6,11 +6,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val prayerName = intent.getStringExtra("PRAYER_NAME") ?: "Prayer"
+        Log.d("AlarmReceiver", "Received alarm for $prayerName")
 
         val channelId = "prayer_reminders"
         val notificationManager = context.getSystemService(
