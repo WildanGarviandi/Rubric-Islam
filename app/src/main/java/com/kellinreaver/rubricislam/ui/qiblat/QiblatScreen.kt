@@ -1,6 +1,13 @@
 package com.kellinreaver.rubricislam.ui.qiblat
 
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -24,6 +31,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -44,10 +54,19 @@ import kotlin.math.sin
 fun QiblatScreen(viewModel: QiblatViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Smoothly animate the direction changes
+    var lastTargetAngle by remember { mutableFloatStateOf(0f) }
+    val currentTarget = uiState.direction - uiState.deviceHeading
+    // Calculate shortest path for rotation to avoid 360 spinning
+    val delta = ((currentTarget - lastTargetAngle + 540) % 360) - 180
+    val targetAngle = lastTargetAngle + delta
+    lastTargetAngle = targetAngle
+
     val animatedDirection by animateFloatAsState(
-        targetValue = uiState.direction,
-        animationSpec = tween(durationMillis = 500),
+        targetValue = targetAngle,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "CompassRotation"
     )
 
@@ -116,7 +135,7 @@ fun ModernCompassView(direction: Float) {
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Outer Rings and Markings
+        // Outer Rings and Markings (Fixed relative to the phone)
         Canvas(modifier = Modifier.fillMaxSize()) {
             val center = Offset(size.width / 2, size.height / 2)
             val radius = size.width / 2
@@ -153,11 +172,11 @@ fun ModernCompassView(direction: Float) {
             }
         }
 
-        // The Rotating Compass Part
+        // The Rotating Compass Part (Points to Kaaba)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .rotate(-direction),
+                .rotate(direction),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -209,35 +228,59 @@ fun ModernCompassView(direction: Float) {
 fun KaabaIllustration() {
     val gold = Color(0xFFD4AF37)
     val black = Color(0xFF1A1A1A)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
-    Canvas(modifier = Modifier.size(40.dp)) {
-        // Main Body
-        drawRoundRect(
-            color = black,
-            size = Size(size.width, size.height),
-            cornerRadius = CornerRadius(4.dp.toPx())
-        )
+    val infiniteTransition = rememberInfiniteTransition(label = "kaaba_beacon")
+    val beaconScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 2.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "beacon_scale"
+    )
+    val beaconAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "beacon_alpha"
+    )
 
-        // Kiswah (Gold Belt)
-        drawRect(
-            color = gold,
-            topLeft = Offset(0f, size.height * 0.25f),
-            size = Size(size.width, size.height * 0.08f)
-        )
+    Box(contentAlignment = Alignment.Center) {
+        // Beacon Pulse
+        Canvas(modifier = Modifier.size(40.dp)) {
+            drawCircle(
+                color = primaryColor.copy(alpha = beaconAlpha),
+                radius = (size.width / 2) * beaconScale,
+                center = center
+            )
+        }
 
-        // Door (Gold)
-        drawRect(
-            color = gold,
-            topLeft = Offset(size.width * 0.65f, size.height * 0.45f),
-            size = Size(size.width * 0.2f, size.height * 0.35f)
-        )
+        Canvas(modifier = Modifier.size(40.dp)) {
+            // Main Body
+            drawRoundRect(
+                color = black,
+                size = Size(size.width, size.height),
+                cornerRadius = CornerRadius(4.dp.toPx())
+            )
 
-        // Top shadow/perspective line
-        drawLine(
-            color = Color.White.copy(alpha = 0.1f),
-            start = Offset(0f, 0f),
-            end = Offset(size.width, 0f),
-            strokeWidth = 1.dp.toPx()
-        )
+            // Kiswah (Gold Belt)
+            drawRect(
+                color = gold,
+                topLeft = Offset(0f, size.height * 0.25f),
+                size = Size(size.width, size.height * 0.08f)
+            )
+
+            // Door (Gold)
+            drawRect(
+                color = gold,
+                topLeft = Offset(size.width * 0.65f, size.height * 0.45f),
+                size = Size(size.width * 0.2f, size.height * 0.35f)
+            )
+        }
     }
 }

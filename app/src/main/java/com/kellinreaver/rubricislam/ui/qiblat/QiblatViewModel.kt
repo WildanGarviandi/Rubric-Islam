@@ -2,6 +2,7 @@ package com.kellinreaver.rubricislam.ui.qiblat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kellinreaver.rubricislam.domain.usecase.GetDirectionForQiblatUseCase
 import com.kellinreaver.rubricislam.domain.usecase.GetLocationUseCase
 import com.kellinreaver.rubricislam.domain.usecase.GetQiblatDirectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,13 +18,24 @@ class QiblatViewModel
 @Inject
 constructor(
     private val getQiblatDirectionUseCase: GetQiblatDirectionUseCase,
-    private val getLocationUseCase: GetLocationUseCase
+    private val getLocationUseCase: GetLocationUseCase,
+    private val getDirectionForQiblatUseCase: GetDirectionForQiblatUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(QiblatUiState())
     val uiState: StateFlow<QiblatUiState> = _uiState.asStateFlow()
 
     init {
         loadQiblatDirection()
+        observeDeviceHeading()
+    }
+
+    private fun observeDeviceHeading() {
+        viewModelScope.launch {
+            getDirectionForQiblatUseCase.invoke()
+            getDirectionForQiblatUseCase.deviceHeadingStateFlow.collectLatest { heading ->
+                _uiState.value = _uiState.value.copy(deviceHeading = heading)
+            }
+        }
     }
 
     private fun loadQiblatDirection() {
@@ -43,5 +55,10 @@ constructor(
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        getDirectionForQiblatUseCase.stopListening()
     }
 }

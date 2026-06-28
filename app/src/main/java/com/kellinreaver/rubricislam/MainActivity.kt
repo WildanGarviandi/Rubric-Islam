@@ -1,6 +1,8 @@
 package com.kellinreaver.rubricislam
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -103,20 +105,22 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionWrapper(content: @Composable () -> Unit) {
-    val locationPermissionsState =
-        rememberMultiplePermissionsState(
-            listOf(
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
+    val permissions = mutableListOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+    }
 
-    if (locationPermissionsState.allPermissionsGranted) {
+    val permissionsState = rememberMultiplePermissionsState(permissions)
+
+    if (permissionsState.allPermissionsGranted) {
         content()
     } else {
         PermissionRequestScreen(
-            shouldShowRationale = locationPermissionsState.shouldShowRationale,
-            onRequestPermission = { locationPermissionsState.launchMultiplePermissionRequest() }
+            shouldShowRationale = permissionsState.shouldShowRationale,
+            onRequestPermission = { permissionsState.launchMultiplePermissionRequest() }
         )
     }
 }

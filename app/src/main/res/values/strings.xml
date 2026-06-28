@@ -9,6 +9,7 @@
     <string name="tab_prayer_name">Prayer</string>
     <string name="tab_qiblat_name">Qiblat</string>
     <string name="tab_alerts_name">Alerts</string>
+    <string name="notification_description_label">Notifications will be triggered at the exact time of each prayer based on your location. Please ensure battery optimization is disabled for reliable alerts.</string>
 
 
 </resources>

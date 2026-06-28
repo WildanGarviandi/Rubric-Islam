@@ -38,19 +38,22 @@ constructor(
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
 
         prayerTimes.forEach { prayer ->
+            if (!reminderRepository.isReminderEnabled(prayer.name)) {
+                Log.d(TAG, "Skipping ${prayer.name} as it is disabled")
+                return@forEach
+            }
             try {
                 val prayerTime = LocalTime.parse(prayer.time, formatter)
 
-                // Only schedule if the prayer time hasn't passed yet today
-                if (prayerTime.isAfter(now)) {
-                    val zonedDateTime = prayerTime.atDate(today)
-                        .atZone(ZoneId.systemDefault())
+                // Schedule for today if it hasn't passed, otherwise schedule for tomorrow
+                val scheduledDate = if (prayerTime.isAfter(now)) today else today.plusDays(1)
+                val zonedDateTime = prayerTime.atDate(scheduledDate)
+                    .atZone(ZoneId.systemDefault())
 
-                    reminderRepository.schedulePrayerAlarm(
-                        prayer.name,
-                        zonedDateTime.toInstant().toEpochMilli()
-                    )
-                }
+                reminderRepository.schedulePrayerAlarm(
+                    prayer.name,
+                    zonedDateTime.toInstant().toEpochMilli()
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to parse/schedule time ${prayer.time}: ${e.message}")
             }
