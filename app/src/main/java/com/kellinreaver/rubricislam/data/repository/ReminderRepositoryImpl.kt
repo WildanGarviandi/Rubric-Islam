@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.content.edit
 import com.kellinreaver.rubricislam.domain.model.PrayerReminder
 import com.kellinreaver.rubricislam.domain.repository.ReminderRepository
@@ -37,6 +38,9 @@ constructor(
                 if (it.prayerName == prayerName) it.copy(isEnabled = isEnabled) else it
             }
         }
+        if (!isEnabled) {
+            cancelPrayerAlarm(prayerName)
+        }
     }
 
     override fun isReminderEnabled(prayerName: String): Boolean =
@@ -50,7 +54,7 @@ constructor(
     }
 
     @SuppressLint("ScheduleExactAlarm")
-    fun schedulePrayerAlarm(prayerName: String, timeInMillis: Long) {
+    override fun schedulePrayerAlarm(prayerName: String, timeInMillis: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent =
             Intent(context, AlarmReceiver::class.java).apply {
@@ -63,6 +67,8 @@ constructor(
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+
+        Log.d("ReminderRepo", "Scheduling alarm for $prayerName at $timeInMillis")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             !alarmManager.canScheduleExactAlarms()
@@ -79,5 +85,19 @@ constructor(
                 pendingIntent
             )
         }
+    }
+
+    override fun cancelPrayerAlarm(prayerName: String) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                prayerName.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        alarmManager.cancel(pendingIntent)
+        Log.d("ReminderRepo", "Cancelled alarm for $prayerName")
     }
 }

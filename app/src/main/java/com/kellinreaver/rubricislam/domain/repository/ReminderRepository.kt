@@ -7,4 +7,6 @@ interface ReminderRepository {
     fun getPrayerReminders(): Flow<List<PrayerReminder>>
     suspend fun toggleReminder(prayerName: String, isEnabled: Boolean)
     fun isReminderEnabled(prayerName: String): Boolean
+    fun schedulePrayerAlarm(prayerName: String, timeInMillis: Long)
+    fun cancelPrayerAlarm(prayerName: String)
 }
