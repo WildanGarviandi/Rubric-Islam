@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.kellinreaver.rubricislam.domain.model.PrayerTime
 import com.kellinreaver.rubricislam.domain.usecase.GetLocationUseCase
 import com.kellinreaver.rubricislam.domain.usecase.GetPrayerTimesUseCase
+import com.kellinreaver.rubricislam.domain.usecase.SchedulePrayerRemindersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -22,7 +23,8 @@ class PrayerTimeViewModel
 @Inject
 constructor(
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
-    private val getLocationUseCase: GetLocationUseCase
+    private val getLocationUseCase: GetLocationUseCase,
+    private val schedulePrayerRemindersUseCase: SchedulePrayerRemindersUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PrayerTimeUiState())
     val uiState: StateFlow<PrayerTimeUiState> = _uiState.asStateFlow()
@@ -40,6 +42,7 @@ constructor(
                     location.latitude,
                     location.longitude
                 ).collectLatest { times ->
+                    schedulePrayerRemindersUseCase(times)
                     val predictedTimes = predictNextPrayer(times)
                     _uiState.value =
                         _uiState.value.copy(
@@ -62,7 +65,9 @@ constructor(
         // Try to find the first prayer that is after the current time
         var nextPrayerIndex = times.indexOfFirst {
             try {
-                val prayerTime = LocalTime.parse(it.time, timeFormatter)
+                // Aladhan API sometimes returns "HH:mm (Timezone)". We only need "HH:mm".
+                val timeString = it.time.split(" ")[0]
+                val prayerTime = LocalTime.parse(timeString, timeFormatter)
                 prayerTime.isAfter(currentTime)
             } catch (_: Exception) {
                 false
