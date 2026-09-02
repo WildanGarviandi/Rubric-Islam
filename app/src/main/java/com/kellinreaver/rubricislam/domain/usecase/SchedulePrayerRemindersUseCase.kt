@@ -28,12 +28,12 @@ class SchedulePrayerRemindersUseCase @Inject constructor(
             }
 
             try {
-                // Aladhan API sometimes returns "HH:mm (Timezone)". We only need "HH:mm".
-                val timeString = prayer.time.split(" ")[0]
+                // Aladhan API sometimes returns "HH:mm (Timezone)" or "HH:mm(TZ)". We only need "HH:mm".
+                val timeString = prayer.time.substringBefore(" ").substringBefore("(")
                 val prayerTime = LocalTime.parse(timeString, formatter)
 
-                // Schedule for today if it hasn't passed, otherwise schedule for tomorrow
-                val scheduledDate = if (prayerTime.isAfter(now)) today else today.plusDays(1)
+                // Schedule for today if it hasn't passed yet (including current moment), otherwise tomorrow
+                val scheduledDate = if (!prayerTime.isBefore(now)) today else today.plusDays(1)
                 val zonedDateTime = prayerTime.atDate(scheduledDate)
                     .atZone(ZoneId.systemDefault())
 

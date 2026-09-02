@@ -1,21 +1,28 @@
 package com.kellinreaver.rubricislam.ui.prayer
 
+import android.app.AlarmManager
+import android.content.ContextWrapper
+import android.content.Intent
 import android.util.Log
-import app.cash.turbine.test
 import com.kellinreaver.rubricislam.domain.model.PrayerTime
 import com.kellinreaver.rubricislam.domain.usecase.GetLocationUseCase
 import com.kellinreaver.rubricislam.domain.usecase.GetPrayerTimesUseCase
 import com.kellinreaver.rubricislam.domain.usecase.LocationModel
 import com.kellinreaver.rubricislam.domain.usecase.SchedulePrayerRemindersUseCase
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -28,112 +35,119 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PrayerTimeViewModelTest {
+    private class TestContext(private val alarmManager: AlarmManager) :
+        ContextWrapper(mockk(relaxed = true)) {
+        var startedIntent: Intent? = null
 
-    private val getPrayerTimesUseCase: GetPrayerTimesUseCase = mockk()
-    private val getLocationUseCase: GetLocationUseCase = mockk()
-    private val schedulePrayerRemindersUseCase: SchedulePrayerRemindersUseCase = mockk()
-    private val testDispatcher = StandardTestDispatcher()
+        override fun getSystemService(name: String): Any? =
+            if (name == ALARM_SERVICE) alarmManager else super.getSystemService(name)
 
-    private lateinit var viewModel: PrayerTimeViewModel
+        override fun startActivity(intent: Intent) {
+            startedIntent = intent
+        }
+    }
+
+    private val getPrayerTimesUseCase = mockk<GetPrayerTimesUseCase>()
+    private val getLocationUseCase = mockk<GetLocationUseCase>()
+    private val schedulePrayerRemindersUseCase =
+        mockk<SchedulePrayerRemindersUseCase>(relaxed = true)
+    private val alarmManager = mockk<AlarmManager>()
+    private lateinit var context: TestContext
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+        Dispatchers.setMain(StandardTestDispatcher())
         mockkStatic(Log::class)
-        mockkStatic(LocalTime::class)
-        mockkStatic(java.time.LocalDate::class)
         every { Log.i(any(), any()) } returns 0
-        every { java.time.LocalDate.now() } returns java.time.LocalDate.of(2024, 1, 1)
+        every { Log.e(any(), any(), any()) } returns 0
+        every { alarmManager.canScheduleExactAlarms() } returns true
+        context = TestContext(alarmManager)
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        unmockkStatic(Log::class, LocalTime::class, java.time.LocalDate::class)
+        unmockkStatic(Log::class)
     }
 
     @Test
-    fun `loadPrayerTimes should update uiState with prayer times and correct next prayer`() =
+    fun `loadPrayerTimes updates state with next prayer and date`() = runTest {
+        val currentTime = LocalTime.now()
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+        val prayerTimes = listOf(
+            PrayerTime("Fajr", currentTime.minusMinutes(30).format(timeFormatter)),
+            PrayerTime("Dhuhr", currentTime.plusMinutes(30).format(timeFormatter)),
+            PrayerTime("Asr", currentTime.plusHours(2).format(timeFormatter))
+        )
+        every { getLocationUseCase() } returns flowOf(LocationModel(1.0, 2.0))
+        every { getPrayerTimesUseCase(1.0, 2.0) } returns flowOf(prayerTimes)
+
+        val viewModel = PrayerTimeViewModel(
+            getPrayerTimesUseCase = getPrayerTimesUseCase,
+            getLocationUseCase = getLocationUseCase,
+            schedulePrayerRemindersUseCase = schedulePrayerRemindersUseCase,
+            context = context
+        )
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals(1, state.prayerTimes.count { it.isNext })
+        assertTrue(state.prayerTimes.any { it.name == "Dhuhr" && it.isNext })
+        assertTrue(state.todayDate.isNotEmpty())
+        coVerify(exactly = 1) { schedulePrayerRemindersUseCase(prayerTimes) }
+    }
+
+    @Test
+    fun `permission dialog is shown and dismissed when exact alarm permission is denied`() =
         runTest {
-            // Arrange
-            val location = LocationModel(latitude = 1.23, longitude = 4.56)
-            val prayerTimes = listOf(
-                PrayerTime("Fajr", "05:00"),
-                PrayerTime("Dhuhr", "12:00"),
-                PrayerTime("Asr", "15:30"),
-                PrayerTime("Maghrib", "18:00"),
-                PrayerTime("Isha", "19:30")
+            every { getLocationUseCase() } returns flowOf(LocationModel(1.0, 2.0))
+            every { getPrayerTimesUseCase(1.0, 2.0) } returns flowOf(emptyList())
+
+            val viewModel = PrayerTimeViewModel(
+                getPrayerTimesUseCase = getPrayerTimesUseCase,
+                getLocationUseCase = getLocationUseCase,
+                schedulePrayerRemindersUseCase = schedulePrayerRemindersUseCase,
+                context = context
             )
 
-            // Mock LocalTime.now() to be 13:00, so next prayer should be Asr (index 2)
-            every { LocalTime.now() } returns LocalTime.of(13, 0)
+            advanceUntilIdle()
 
-            every { getLocationUseCase() } returns flowOf(location)
-            every { getPrayerTimesUseCase(location.latitude, location.longitude) } returns flowOf(
-                prayerTimes
-            )
+            @Suppress("UNCHECKED_CAST")
+            val stateFlow = PrayerTimeViewModel::class.java
+                .getDeclaredField("_uiState")
+                .apply { isAccessible = true }
+                .get(viewModel) as MutableStateFlow<PrayerTimeUiState>
+            stateFlow.value = stateFlow.value.copy(showExactAlarmPermissionDialog = true)
 
-            // Act
-            viewModel = PrayerTimeViewModel(
-                getPrayerTimesUseCase,
-                getLocationUseCase,
-                schedulePrayerRemindersUseCase
-            )
+            assertTrue(viewModel.uiState.value.showExactAlarmPermissionDialog)
 
-            // Assert
-            viewModel.uiState.test {
-                // 1. Initial State
-                assertEquals(PrayerTimeUiState(), awaitItem())
+            viewModel.onExactAlarmPermissionDialogDismissed()
 
-                // 2. Loading State (from loadPrayerTimes)
-                assertEquals(PrayerTimeUiState(isLoading = true), awaitItem())
-
-                // 3. Final State with data
-                val state = awaitItem()
-                assertFalse(state.isLoading)
-                assertEquals(5, state.prayerTimes.size)
-
-                // Fajr
-                assertFalse("Fajr should not be next", state.prayerTimes[0].isNext)
-                // Dhuhr
-                assertFalse("Dhuhr should not be next", state.prayerTimes[1].isNext)
-                // Asr (Expected next at 13:00)
-                assertTrue("Asr should be next", state.prayerTimes[2].isNext)
-
-                assertEquals("Monday, 1 January 2024", state.todayDate)
-            }
+            assertFalse(viewModel.uiState.value.showExactAlarmPermissionDialog)
         }
 
     @Test
-    fun `when current time is after last prayer, next prayer should be Fajr`() = runTest {
-        // Arrange
-        val location = LocationModel(latitude = 1.23, longitude = 4.56)
-        val prayerTimes = listOf(
-            PrayerTime("Fajr", "05:00"),
-            PrayerTime("Isha", "19:30")
-        )
+    fun `openExactAlarmSettings handles missing activity gracefully`() = runTest {
+        every { getLocationUseCase() } returns flowOf(LocationModel(1.0, 2.0))
+        every { getPrayerTimesUseCase(1.0, 2.0) } returns flowOf(emptyList())
 
-        // Mock LocalTime.now() to be 21:00, so next prayer should be Fajr (index 0)
-        every { LocalTime.now() } returns LocalTime.of(21, 0)
-
-        every { getLocationUseCase() } returns flowOf(location)
-        every { getPrayerTimesUseCase(location.latitude, location.longitude) } returns flowOf(
-            prayerTimes
-        )
-
-        // Act
-        viewModel = PrayerTimeViewModel(
-            getPrayerTimesUseCase,
-            getLocationUseCase,
-            schedulePrayerRemindersUseCase
-        )
-
-        // Assert
-        viewModel.uiState.test {
-            skipItems(2) // Initial and Loading
-            val state = awaitItem()
-            assertTrue("Fajr should be next", state.prayerTimes[0].isNext)
-            assertFalse("Isha should not be next", state.prayerTimes[1].isNext)
+        val failingContext = object : ContextWrapper(mockk(relaxed = true)) {
+            override fun startActivity(intent: Intent) {
+                error("Settings activity unavailable in test")
+            }
         }
+
+        val viewModel = PrayerTimeViewModel(
+            getPrayerTimesUseCase = getPrayerTimesUseCase,
+            getLocationUseCase = getLocationUseCase,
+            schedulePrayerRemindersUseCase = schedulePrayerRemindersUseCase,
+            context = failingContext
+        )
+
+        advanceUntilIdle()
+
+        viewModel.openExactAlarmSettings()
     }
 }

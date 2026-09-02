@@ -9,4 +9,5 @@ interface ReminderRepository {
     fun isReminderEnabled(prayerName: String): Boolean
     fun schedulePrayerAlarm(prayerName: String, timeInMillis: Long)
     fun cancelPrayerAlarm(prayerName: String)
+    fun canScheduleExactAlarms(): Boolean
 }

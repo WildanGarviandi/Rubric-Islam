@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -132,6 +134,44 @@ fun PrayerTimesScreen(viewModel: PrayerTimeViewModel) {
             }
         }
     }
+
+    if (uiState.showExactAlarmPermissionDialog) {
+        ExactAlarmPermissionDialog(
+            onConfirm = { viewModel.openExactAlarmSettings() },
+            onDismiss = { viewModel.onExactAlarmPermissionDialogDismissed() }
+        )
+    }
+}
+
+@Composable
+fun ExactAlarmPermissionDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Enable Exact Alarm",
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            Text(
+                text = "To notify you at the exact prayer time, this app needs the " +
+                    "Alarms & Reminders permission. Without it, Android may delay " +
+                    "your prayer notifications by several minutes or more during " +
+                    "Doze mode.\n\nPlease grant the permission in Settings."
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Open Settings")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Later")
+            }
+        }
+    )
 }
 
 @Composable

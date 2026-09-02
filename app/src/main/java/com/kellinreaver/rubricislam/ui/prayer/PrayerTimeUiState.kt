@@ -6,5 +6,6 @@ data class PrayerTimeUiState(
     val prayerTimes: List<PrayerTime> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val todayDate: String = ""
+    val todayDate: String = "",
+    val showExactAlarmPermissionDialog: Boolean = false
 )
