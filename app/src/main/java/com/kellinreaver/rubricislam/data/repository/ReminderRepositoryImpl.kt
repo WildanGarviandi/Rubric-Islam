@@ -1,11 +1,9 @@
 package com.kellinreaver.rubricislam.data.repository
 
-import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.core.content.edit
 import com.kellinreaver.rubricislam.domain.model.PrayerReminder
@@ -53,7 +51,6 @@ constructor(
         )
     }
 
-    @SuppressLint("ScheduleExactAlarm")
     override fun schedulePrayerAlarm(prayerName: String, timeInMillis: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent =
@@ -67,24 +64,25 @@ constructor(
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+        val showIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            ?: Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(context.packageName)
+        val showPendingIntent = PendingIntent.getActivity(
+            context,
+            prayerName.hashCode(),
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         Log.d("ReminderRepo", "Scheduling alarm for $prayerName at $timeInMillis")
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            !alarmManager.canScheduleExactAlarms()
-        ) {
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                timeInMillis,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                timeInMillis,
-                pendingIntent
-            )
-        }
+        // setAlarmClock fires at the exact time regardless of Doze/App Standby and needs no
+        // special permission, unlike setExactAndAllowWhileIdle which can be deferred.
+        alarmManager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(timeInMillis, showPendingIntent),
+            pendingIntent
+        )
     }
 
     override fun cancelPrayerAlarm(prayerName: String) {

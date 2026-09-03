@@ -19,9 +19,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class PrayerTimeViewModel
-@Inject
-constructor(
+class PrayerTimeViewModel @Inject constructor(
     private val getPrayerTimesUseCase: GetPrayerTimesUseCase,
     private val getLocationUseCase: GetLocationUseCase,
     private val schedulePrayerRemindersUseCase: SchedulePrayerRemindersUseCase
@@ -65,8 +63,8 @@ constructor(
         // Try to find the first prayer that is after the current time
         var nextPrayerIndex = times.indexOfFirst {
             try {
-                // Aladhan API sometimes returns "HH:mm (Timezone)". We only need "HH:mm".
-                val timeString = it.time.split(" ")[0]
+                // Aladhan API sometimes returns "HH:mm (Timezone)" or "HH:mm(TZ)". We only need "HH:mm".
+                val timeString = it.time.substringBefore(" ").substringBefore("(")
                 val prayerTime = LocalTime.parse(timeString, timeFormatter)
                 prayerTime.isAfter(currentTime)
             } catch (_: Exception) {
