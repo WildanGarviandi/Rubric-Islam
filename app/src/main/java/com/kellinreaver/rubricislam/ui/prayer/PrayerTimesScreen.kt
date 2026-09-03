@@ -137,7 +137,10 @@ fun PrayerTimesScreen(viewModel: PrayerTimeViewModel) {
 
     if (uiState.showExactAlarmPermissionDialog) {
         ExactAlarmPermissionDialog(
-            onConfirm = { viewModel.openExactAlarmSettings() },
+            onConfirm = {
+                viewModel.openExactAlarmSettings()
+                viewModel.onExactAlarmPermissionDialogDismissed()
+            },
             onDismiss = { viewModel.onExactAlarmPermissionDialogDismissed() }
         )
     }

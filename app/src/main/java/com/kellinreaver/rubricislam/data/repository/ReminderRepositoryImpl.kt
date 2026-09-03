@@ -66,6 +66,9 @@ constructor(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         val showIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            ?: Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(context.packageName)
         val showPendingIntent = PendingIntent.getActivity(
             context,
             prayerName.hashCode(),
