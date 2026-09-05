@@ -14,9 +14,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class QiblatViewModel
-@Inject
-constructor(
+class QiblatViewModel @Inject constructor(
     private val getQiblatDirectionUseCase: GetQiblatDirectionUseCase,
     private val getLocationUseCase: GetLocationUseCase,
     private val getDirectionForQiblatUseCase: GetDirectionForQiblatUseCase
@@ -41,18 +39,25 @@ constructor(
     private fun loadQiblatDirection() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            getLocationUseCase().collectLatest { location ->
-                getQiblatDirectionUseCase(
-                    location.latitude,
-                    location.longitude
-                ).collectLatest { qiblat ->
-                    _uiState.value =
-                        _uiState.value.copy(
-                            direction = qiblat.bearing,
-                            isLoading = false,
-                            error = null
-                        )
+            try {
+                getLocationUseCase().collectLatest { location ->
+                    getQiblatDirectionUseCase(
+                        location.latitude,
+                        location.longitude
+                    ).collectLatest { qiblat ->
+                        _uiState.value =
+                            _uiState.value.copy(
+                                direction = qiblat.bearing,
+                                isLoading = false,
+                                error = null
+                            )
+                    }
                 }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Unknown error"
+                )
             }
         }
     }

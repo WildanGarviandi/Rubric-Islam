@@ -24,6 +24,7 @@ room = "2.8.4"
 mockk = "1.13.10"
 coroutinesTest = "1.8.0"
 turbine = "1.1.0"
+robolectric = "4.12.2"
 
 # Quality
 detekt = "1.23.8"
@@ -70,6 +71,7 @@ room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
